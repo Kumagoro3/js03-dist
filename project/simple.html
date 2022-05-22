@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Chatアプリ</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<h1>サラダ好きのためのサラダ情報チャット「サラダトーーク！」</h1>
+<!--画面-->
+<div id= "field">
+    <ul id= "chat-ul"></ul>
+</div>
+
+<!--入力場所，送信ボタン-->
+<div id= "input-field">
+    <ul id="input">
+        <li><input type= "text" id= "text"></li>
+        <li><input type= "button" value= "Send" id= "send"></li>
+    </ul>
+</div>
+<!-- コンテンツ表示画面 -->
+<h1>あなたが投稿したお店の一覧</h1>
+<div id="output_field">
+    <ul id="shop_list">
+    
+    </ul>
+</div>
+
+<button id="delete_all">データベース全削除</button>
+
+
+<!-- JQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<!-- JQuery -->
+
+
+<!--** 以下Firebase **-->
+
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-app.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+  
+    import { getDatabase, ref, push, set, onChildAdded, remove, onChildRemoved }
+        from "https://cdnjs.cloudflare.com/ajax/libs/firebase/9.8.1/firebase-database.min.js";
+    
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "",
+      authDomain: "fir-demo-b2c2a.firebaseapp.com",
+      projectId: "fir-demo-b2c2a",
+      storageBucket: "fir-demo-b2c2a.appspot.com",
+      messagingSenderId: "1011405252441",
+      appId: "1:1011405252441:web:7a2b76c321ac0062364e48"
+    };
+    // Initialize Firebase
+    // firebase呼び出し
+    const app = initializeApp(firebaseConfig);
+    // firebaseからDatabase呼び出し
+    const db = getDatabase(app);
+    // DB内の場所を設定
+    const dbRef =ref(db,'chat');
+    const dbRef2 =ref(db,'name');
+    const dbRef3 =ref(db,'value');
+    // マルチユーザー アプリケーションでリストにデータを追加するには 
+        // push() メソッドを使用します。push() メソッドは指定した Firebase 参照に
+        // 新しい子が追加されるたびに、一意のキーを生成します。
+        
+
+    // 最初のメッセージを投下する
+    $(document).ready(function(){
+    $('#chat-ul').append(`<li class="chat-left">こんにちは！サラダのお店を投稿してくださる方は、「投稿」と送信してください！</li>`)
+    });
+    // 「投稿」を送信してから、店名の入力までをフォロー.functionを定義して次段のクリックアクションに組み込み
+    function chk() {
+    var textchk = $('#text').val();
+    const tc = `<li class="chat-right"><div>${textchk}</div></li>`
+    if(textchk== "投稿") {
+        $('#chat-ul').append(tc);
+        setTimeout(function(){
+        $('#chat-ul').append(`<li class="chat-left">ありがとうございます！まず店名の入力をお願いします</li>`)
+        },300);
+        $('#field').delay(100).animate({
+            scrollTop: $("#field").height()*3.5
+        },300);
+        $('#input').html(
+            '<input type= "text" id= "text2"><input type= "button" value= "Send" id= "send2">'
+        )
+    }else{
+        alert("「投稿」と話しかけることで投稿をスタートできます");
+    }}
+    // 「投稿」と入力して送信ボタンを押した際の処理
+    $("#input").on("click","#send",function(){
+        const msg = {
+            // uname :$("#uname").val(),
+            text: $("#text").val()
+        }
+        const newPostRef = push(dbRef);
+        // ユーザーが入力した値が入っているmsgと、一意のキーを発行したnewPostREfをセットで
+        // データベースに登録する。set()は登録にも更新にも利用できるが、IDを発行しないためID発行に
+        // pushメソッドを利用している。
+        set(newPostRef, msg);
+        chk()
+    });
+    // 店名を入力してから評価データの登録までをフォロー
+    function chk2() {
+    var text_wordcount = $('#text2').val().length;
+    var text2 = $('#text2').val()
+    const tc = `<li class="chat-right"><div>${text2}</div></li>`
+    if(text_wordcount!=0) {
+        $('#chat-ul').append(tc);
+        setTimeout(function(){
+        $('#chat-ul').append(
+            `<li class="chat-left">ありがとうございます！次に、お店の評価の記入をお願いします。</li>
+            <li class="chat-left">サラダのボリューム
+                <form type="get" action="">
+                <div class="volume" id="volume">
+                    <input id="volume1" type="radio" name="volume" value="5" />
+                    <label for="volume1">★</label>
+                    <input id="volume2" type="radio" name="volume" value="4" />
+                    <label for="volume2">★</label>
+                    <input id="volume3" type="radio" name="volume" value="3" />
+                    <label for="volume3">★</label>
+                    <input id="volume4" type="radio" name="volume" value="2" />
+                    <label for="volume4">★</label>
+                    <input id="volume5" type="radio" name="volume" value="1" />
+                    <label for="volume5">★</label>
+                </div>
+                </form></li>
+                <li class="chat-left">具材の多さ
+                    <form type="get" action="">
+                    <div class="variety" id="variety">
+                        <input id="variety1" type="radio" name="variety" value="5" />
+                        <label for="variety1">★</label>
+                        <input id="variety2" type="radio" name="variety" value="4" />
+                        <label for="variety2">★</label>
+                        <input id="variety3" type="radio" name="variety" value="3" />
+                        <label for="variety3">★</label>
+                        <input id="variety4" type="radio" name="variety" value="2" />
+                        <label for="variety4">★</label>
+                        <input id="variety5" type="radio" name="variety" value="1" />
+                        <label for="variety5">★</label>
+                    </div>
+                </form></li>
+                <li class="chat-left">おいしさ
+                    <form type="get" action="">
+                    <div class="yammy">
+                        <input id="yammy1" type="radio" name="yammy" value="5" />
+                        <label for="yammy1">★</label>
+                        <input id="yammy2" type="radio" name="yammy" value="4" />
+                        <label for="yammy2">★</label>
+                        <input id="yammy3" type="radio" name="yammy" value="3" />
+                        <label for="yammy3">★</label>
+                        <input id="yammy4" type="radio" name="yammy" value="2" />
+                        <label for="yammy4">★</label>
+                        <input id="yammy5" type="radio" name="yammy" value="1" />
+                        <label for="yammy5">★</label>
+                    </div>
+                </form>
+                </li>`
+            )
+        },300);
+        $('#field').delay(100).animate({
+            scrollTop: $("#field").height()*1.2
+        },300);
+        $('#input').html(
+            '<input type= "button" value= "Send" id= "send3"></div>'
+        )
+    }else{
+        alert("店名は１文字以上で入力してください");
+    }}
+    // 店名を入力して、送信ボタンを押したときの処理
+    $("#input").on("click","#send2",function(){
+        const msg = {
+            // uname :$("#uname").val(),
+            text: $("#text2").val()
+        }
+        // マルチユーザー アプリケーションでリストにデータを追加するには 
+        // push() メソッドを使用します。push() メソッドは指定した Firebase 参照に
+        // 新しい子が追加されるたびに、一意のキーを生成します。
+        const newPostRef = push(dbRef2);
+        // ユーザーが入力した値が入っているmsgと、一意のキーを発行したnewPostREfをセットで
+        // データベースに登録する。set()は登録にも更新にも利用できるが、IDを発行しないためID発行に
+        // pushメソッドを利用している。
+        set(newPostRef, msg);
+        chk2()
+    });
+    // 評価入力後の挙動をフォロー
+    function chk3() {
+        $('#chat-ul').append(`<li class="chat-left"><div>お店の登録ありがとうございました！
+            また「投稿」と送信していただくと、新しいお店を追加できます！</div></li>`);
+        $('#field').delay(100).animate({
+            scrollTop: $("#field").height()*3
+        },300);
+        $('#input').html(
+            '<li><input type= "text" id= "text"></li><li><input type= "button" value= "Send" id= "send"></li>'
+        )
+    }
+    // 店名を入力して、送信ボタンを押したときの処理
+    $("#input").on("click","#send3",function(){
+        const msg = {
+            // uname :$("#uname").val(),
+            volume: $('input:radio[name="volume"]:checked').val(),
+            // volume: $("#volume").val(),
+            variety: $('input:radio[name="variety"]:checked').val(),
+            yammy: $('input:radio[name="yammy"]:checked').val()
+        }
+        // マルチユーザー アプリケーションでリストにデータを追加するには 
+        // push() メソッドを使用します。push() メソッドは指定した Firebase 参照に
+        // 新しい子が追加されるたびに、一意のキーを生成します。
+        const newPostRef = push(dbRef3);
+        // ユーザーが入力した値が入っているmsgと、一意のキーを発行したnewPostREfをセットで
+        // データベースに登録する。set()は登録にも更新にも利用できるが、IDを発行しないためID発行に
+        // pushメソッドを利用している。
+        set(newPostRef, msg);
+        chk3()
+    });
+
+
+
+    // onChildAdded:アイテムのリストを取得します。また、アイテムのリストへの追加をリッスンします。
+    // このコールバックは既存の子ごとに 1 回トリガーされます。
+    // さらに、指定されたパスに新しい子が追加されると、そのたびに再びトリガーされます。
+    // リスナーに渡される DataSnapshot に、新しい子のデータが含まれています。
+    // DB内の指定の場所のデータ追加をリッスン↓
+    onChildAdded(dbRef2, function(data){
+        const msg = data.val(); 
+        const key = data.key;
+        const h = `<li class="news_item" id="${key}"> 
+                <div class="shop_title">
+                    ${msg.text}
+                </div>
+                <p class="rating">
+                </p>
+                <button class="delete">
+                    削除する
+                </button>
+                </li>`; 
+        // <p>${msg.uname}:
+        $('#shop_list').append(h);
+    });
+
+    onChildAdded(dbRef3, function(data){
+        const msg = data.val();
+        const key = data.key;
+        const h = `<p id="${key}" class="message"> ${msg}</p>`; 
+        // <p>${msg.uname}:
+            console.log(h)
+        $('#shop_list .rating').append(h);
+    });
+
+    $('#shop_list').on('click','.delete', function(){
+    var r = $(this).parent("li").attr("id")
+    console.log(r)
+    remove(ref(db, `name/${r}`))
+    $(this).parent().remove();
+});
+
+$('#delete_all').on('click', function(){
+    remove(ref(db))
+});
+
+// 最初に2つロボットから話しかけられる
+// output(chat[0], 'robot');
+
+// setTimeout( ()=> {
+//     output(chat[1], 'robot');
+// }, 2000);
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
